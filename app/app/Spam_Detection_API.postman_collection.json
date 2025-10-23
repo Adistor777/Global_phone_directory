@@ -1,0 +1,340 @@
+{
+  "info": {
+    "name": "Spam Detection API",
+    "description": "Complete API collection for Spam Detection & Contact Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "1. User Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"first_name\": \"Test\",\n    \"last_name\": \"User\",\n    \"phone_number\": \"9876543210\",\n    \"password\": \"testpass123\",\n    \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user/signup",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "signup"]
+            },
+            "description": "Create a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "2. User Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"access_token\", jsonData.access_token);",
+                  "pm.collectionVariables.set(\"refresh_token\", jsonData.refresh_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone_number\": \"+917220875841\",\n    \"password\": \"mytest123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "login"]
+            },
+            "description": "Login with existing user OR auto-create if doesn't exist"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "3. Create Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"phone_number\": \"9123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/contact",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contact"]
+            },
+            "description": "Add a new contact"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Spam",
+      "item": [
+        {
+          "name": "4. Report Spam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone_number\": \"9999999999\",\n    \"description\": \"Telemarketing spam call\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/spam",
+              "host": ["{{base_url}}"],
+              "path": ["api", "spam"]
+            },
+            "description": "Report a phone number as spam"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "5. Search by Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search?q=Felicia",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Felicia"
+                }
+              ]
+            },
+            "description": "Search for users/contacts by name (fuzzy matching)"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Search by Phone",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search?q=7220875841",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "7220875841"
+                }
+              ]
+            },
+            "description": "Search by phone number (exact match)"
+          },
+          "response": []
+        },
+        {
+          "name": "7. Get Search Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/detail/<uuid>",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "detail", "<uuid>"]
+            },
+            "description": "Get detailed info about a user/contact (replace <uuid> with actual ID)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Interactions",
+      "item": [
+        {
+          "name": "8. Create Interaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"receiver_phone\": \"+919876543210\",\n    \"interaction_type\": \"call\",\n    \"metadata\": {\n        \"duration\": 120\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/interaction",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interaction"]
+            },
+            "description": "Create a new interaction (call/message)"
+          },
+          "response": []
+        },
+        {
+          "name": "9. Recent Interactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/interactions/recent?type=call",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interactions", "recent"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "call",
+                  "description": "Optional: filter by call, message, or spam_report"
+                }
+              ]
+            },
+            "description": "Get recent interactions for logged-in user"
+          },
+          "response": []
+        },
+        {
+          "name": "10. Top Contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/interactions/top?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interactions", "top"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Get most frequently contacted people"
+          },
+          "response": []
+        },
+        {
+          "name": "11. Spam Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/interactions/spam-stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interactions", "spam-stats"]
+            },
+            "description": "Get spam report statistics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "12. Dashboard (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard"]
+            },
+            "description": "Get dashboard data as JSON"
+          },
+          "response": []
+        },
+        {
+          "name": "13. Dashboard (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard?format=html",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "html"
+                }
+              ]
+            },
+            "description": "View dashboard UI (HTML)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

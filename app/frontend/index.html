@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Detector - Truecaller Clone</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p style="color: white; margin-top: 20px;">Loading...</p>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- LOGIN/SIGNUP PAGE -->
+    <!-- ========================================= -->
+    <div id="authPage" class="page active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="logo">
+                    <h1>🔍</h1>
+                    <h2>Spam Detector</h2>
+                    <p>Community-driven spam protection system</p>
+                    <p style="font-size: 12px; color: #999; margin-top: 10px;">Like Truecaller - Built by Aditya</p>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="app.showTab('login')">Login</button>
+                    <button class="tab" onclick="app.showTab('signup')">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label>📱 Phone Number</label>
+                        <input type="tel" id="loginPhone" placeholder="+91 98765 43210" value="+917220875841">
+                        <small>Use: +917220875841</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🔒 Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter password" value="mytest123">
+                        <small>Use: mytest123</small>
+                    </div>
+
+                    <button type="submit" class="btn-primary">🚀 Login</button>
+                    
+                    <div id="loginError" class="error-message"></div>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupForm" class="auth-form" style="display: none;">
+                    <div class="form-group">
+                        <label>👤 First Name</label>
+                        <input type="text" id="signupFirstName" placeholder="John" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>👤 Last Name (Optional)</label>
+                        <input type="text" id="signupLastName" placeholder="Doe">
+                    </div>
+
+                    <div class="form-group">
+                        <label>📱 Phone Number</label>
+                        <input type="tel" id="signupPhone" placeholder="+91 98765 43210" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📧 Email (Optional)</label>
+                        <input type="email" id="signupEmail" placeholder="john@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>🔒 Password</label>
+                        <input type="password" id="signupPassword" placeholder="Create password" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary">✨ Create Account</button>
+                    
+                    <div id="signupError" class="error-message"></div>
+                </form>
+
+                <div class="demo-info">
+                    <h4>📌 Demo Accounts Available:</h4>
+                    <p>Phone: +917220875841 | Password: mytest123</p>
+                    <p style="font-size: 11px; color: #999;">Over 30 sample users with data populated!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- MAIN APP (AFTER LOGIN) -->
+    <!-- ========================================= -->
+    <div id="appPage" class="page">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand" onclick="app.navigate('dashboard'); return false;">
+                    <span>🔍</span>
+                    <span>Spam Detector</span>
+                </a>
+
+                <div class="navbar-menu">
+                    <a href="#" class="nav-link" onclick="app.navigate('dashboard'); return false;">
+                        📊 Dashboard
+                    </a>
+                    <a href="#" class="nav-link" onclick="app.navigate('search'); return false;">
+                        🔍 Search
+                    </a>
+                    <a href="#" class="nav-link" onclick="app.navigate('contacts'); return false;">
+                        📇 Contacts
+                    </a>
+                    <a href="#" class="nav-link" onclick="app.navigate('spam'); return false;">
+                        🚫 Report Spam
+                    </a>
+                </div>
+
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">User</div>
+                        <div class="user-phone" id="userPhone">Phone</div>
+                    </div>
+                    <button class="btn-logout" onclick="app.logout()">🚪 Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ========================================= -->
+        <!-- DASHBOARD VIEW -->
+        <!-- ========================================= -->
+        <div id="dashboardView" class="view active">
+            <div class="container">
+                <div class="page-header">
+                    <h1>📊 Your Activity Dashboard</h1>
+                    <p>Overview of your interactions and statistics</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid" id="dashboardStats">
+                    <div class="card stat-card shimmer">
+                        <div class="stat-number">...</div>
+                        <div class="stat-label">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <h3>📱 Recent Activity</h3>
+                    <p class="card-subtitle">Your last 10 interactions</p>
+                    <div id="recentInteractions">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================= -->
+        <!-- SEARCH VIEW -->
+        <!-- ========================================= -->
+        <div id="searchView" class="view">
+            <div class="container">
+                <div class="page-header">
+                    <h1>🔍 Global Directory Search</h1>
+                    <p>Search for anyone in our community database</p>
+                </div>
+
+                <div class="search-box">
+                    <h3>🎯 Search by Name or Phone Number</h3>
+                    <div class="search-input-group">
+                        <input 
+                            type="text" 
+                            class="search-input" 
+                            id="searchInput" 
+                            placeholder="Try: 'Felicia' or '7220875841' or 'Jon'"
+                        >
+                        <button class="btn-search" onclick="app.performSearch()">🔍 Search</button>
+                    </div>
+                    <div class="search-tips">
+                        <p><strong>💡 Tips:</strong></p>
+                        <ul>
+                            <li>Search by name: "John", "Alice", "Felicia"</li>
+                            <li>Search by phone: "9876543210" or "+919876543210"</li>
+                            <li>Fuzzy matching: "Jon" will find "John" too!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="searchResults" class="results-container" style="display: none;">
+                    <!-- Results appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================= -->
+        <!-- CONTACTS VIEW -->
+        <!-- ========================================= -->
+        <div id="contactsView" class="view">
+            <div class="container">
+                <div class="page-header">
+                    <h1>📇 My Contacts</h1>
+                    <p>Manage and track your contact interactions</p>
+                </div>
+
+                <!-- Add Contact Card -->
+                <div class="card feature-card">
+                    <h3>➕ Add New Contact</h3>
+                    <p class="card-subtitle">Save someone to your personal directory</p>
+                    <form id="addContactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>First Name *</label>
+                                <input type="text" id="contactFirstName" placeholder="Alice" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" id="contactLastName" placeholder="Smith">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" id="contactPhone" placeholder="9123456789" required>
+                            <small>Can include or exclude country code</small>
+                        </div>
+                        <button type="submit" class="btn-primary">💾 Save Contact</button>
+                    </form>
+                    <div id="contactMessage" class="message"></div>
+                </div>
+
+                <!-- Top Contacts Card -->
+                <div class="card">
+                    <h3>⭐ Your Top Contacts</h3>
+                    <p class="card-subtitle">People you interact with most frequently</p>
+                    <div id="topContactsList">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================= -->
+        <!-- SPAM REPORT VIEW -->
+        <!-- ========================================= -->
+        <div id="spamView" class="view">
+            <div class="container">
+                <div class="page-header">
+                    <h1>🚫 Report Spam Numbers</h1>
+                    <p>Help protect the community from scammers</p>
+                </div>
+
+                <!-- Report Form Card -->
+                <div class="card feature-card">
+                    <h3>🚨 Report a Spam Number</h3>
+                    <p class="card-subtitle">Your report helps others identify spam calls</p>
+                    <form id="reportSpamForm">
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" id="spamPhone" placeholder="+91 99999 99999" required>
+                            <small>Report any number - registered or not</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Description (Optional)</label>
+                            <textarea 
+                                id="spamDescription" 
+                                rows="3" 
+                                placeholder="E.g., 'Fake bank call asking for OTP' or 'Telemarketing spam'"
+                            ></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">📢 Submit Report</button>
+                    </form>
+                    <div id="spamMessage" class="message"></div>
+                </div>
+
+                <!-- Spam Statistics Card -->
+                <div class="card">
+                    <h3>📊 Spam Statistics</h3>
+                    <p class="card-subtitle">Most reported numbers in the community</p>
+                    
+                    <!-- Filter Options -->
+                    <div class="filter-section">
+                        <h4>🔧 Filter Options:</h4>
+                        <div class="filter-row">
+                            <div class="form-group">
+                                <label>Minimum Reports</label>
+                                <select id="spamMinReports" onchange="app.loadSpamStats()">
+                                    <option value="">All</option>
+                                    <option value="3">3+ reports</option>
+                                    <option value="5">5+ reports</option>
+                                    <option value="10">10+ reports</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date Range</label>
+                                <select id="spamDateRange" onchange="app.loadSpamStats()">
+                                    <option value="">All Time</option>
+                                    <option value="7">Last 7 days</option>
+                                    <option value="30">Last 30 days</option>
+                                    <option value="90">Last 90 days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="spamStats">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

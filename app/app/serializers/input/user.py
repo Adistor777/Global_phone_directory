@@ -1,28 +1,59 @@
 from rest_framework import serializers
-from app.models.user import User
+from app.models import User
+
 
 class CreateUserInputSerializer(serializers.Serializer):
-    first_name = serializers.CharField(required=True, max_length=30)
-    last_name = serializers.CharField(required=False, allow_blank=True, max_length=30)
-    email = serializers.EmailField(required=False)
-    phone_number = serializers.CharField(required=True, max_length=10, min_length=10)
-    password = serializers.CharField(write_only=True, required=True, min_length=5)
-    
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value
+    phone_number = serializers.CharField(max_length=20)
+    password = serializers.CharField(write_only=True, min_length=5)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+    email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
 
     def validate_phone_number(self, value):
-        if User.objects.filter(phone_number=value).exists():
-            raise serializers.ValidationError("A user with this phone number already exists.")
-        return value
+        from app.utils import normalize_phone_number
+        
+        try:
+            normalized = normalize_phone_number(value)
+        except Exception as e:
+            raise serializers.ValidationError(f"Invalid phone number format: {str(e)}")
+        
+        # Check if phone already exists
+        if User.objects.filter(phone_number=normalized).exists():
+            raise serializers.ValidationError("A user with this phone number already exists")
+        
+        return normalized
+
+    def create(self, validated_data):
+        # Extract data with safe defaults
+        phone_number = validated_data['phone_number']
+        password = validated_data['password']
+        first_name = validated_data['first_name']
+        last_name = validated_data.get('last_name') or ''
+        email = validated_data.get('email') or None
+        
+        # Create user using the custom user manager
+        user = User.objects.create_user(
+            phone_number=phone_number,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email
+        )
+        
+        return user
+
 
 class LoginUserInputSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(required=True, max_length=10, min_length=10)
-    password = serializers.CharField(write_only=True, required=True, min_length=5)
-    
+    phone_number = serializers.CharField(max_length=20)
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(max_length=100, required=False)
+    last_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+
     def validate_phone_number(self, value):
-        if not User.objects.filter(phone_number=value).exists():
-            raise serializers.ValidationError("A user with this phone number does not exist.")
-        return value
+        from app.utils import normalize_phone_number
+        
+        try:
+            return normalize_phone_number(value)
+        except Exception as e:
+            raise serializers.ValidationError(f"Invalid phone number format: {str(e)}")
