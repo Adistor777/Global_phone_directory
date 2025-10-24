@@ -1,113 +1,42 @@
-"""
-Utility functions for phone number handling and other helpers
-"""
 import phonenumbers
 from phonenumbers import NumberParseException
-from django.conf import settings
-from fuzzywuzzy import fuzz
+from rest_framework.exceptions import ValidationError
 
 
-def normalize_phone_number(phone_number: str, region: str = None) -> str:
+def normalize_phone_number(phone_number, default_region='IN'):
     """
-    Normalize phone number to E.164 format (+countrycode + number)
-    
-    Examples:
-        '9876543210' (India) -> '+919876543210'
-        '+919876543210' -> '+919876543210'
-        '1234567890' (US) -> '+11234567890'
-    
-    Args:
-        phone_number: Raw phone number string
-        region: ISO country code (e.g., 'IN', 'US')
-    
-    Returns:
-        Normalized phone number in E.164 format
-    
-    Raises:
-        ValueError: If phone number is invalid
+    Normalize phone number to E.164 format (+919876543210)
+    Handles formats: 9876543210, +919876543210, 919876543210
     """
     if not phone_number:
-        raise ValueError("Phone number cannot be empty")
+        raise ValidationError("Phone number is required")
     
-    # Remove spaces and common separators
-    phone_number = phone_number.strip().replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
-    
-    # Use default region from settings if not provided
-    if region is None:
-        region = getattr(settings, 'PHONENUMBER_DEFAULT_REGION', 'IN')
+    # Clean the input - remove spaces, dashes, parentheses
+    phone_number = str(phone_number).strip()
+    phone_number = phone_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
     
     try:
-        # Parse phone number
-        parsed_number = phonenumbers.parse(phone_number, region)
+        # Parse the number with default region
+        parsed_number = phonenumbers.parse(phone_number, default_region)
         
-        # Validate phone number
+        # Validate it's a valid number
         if not phonenumbers.is_valid_number(parsed_number):
-            raise ValueError(f"Invalid phone number: {phone_number}")
+            raise ValidationError(f"'{phone_number}' is not a valid phone number")
         
-        # Return in E.164 format
+        # Format to E.164 standard (+919876543210)
         return phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164)
     
     except NumberParseException as e:
-        raise ValueError(f"Could not parse phone number '{phone_number}': {str(e)}")
-
-
-def format_phone_display(phone_number: str) -> str:
-    """
-    Format phone number for display
+        # User-friendly error messages
+        error_msg = str(e)
+        if "TOO_SHORT" in error_msg or "too short" in error_msg:
+            raise ValidationError(f"Phone number '{phone_number}' is too short. Please enter a valid 10-digit number.")
+        elif "TOO_LONG" in error_msg or "too long" in error_msg:
+            raise ValidationError(f"Phone number '{phone_number}' is too long. Please enter a valid 10-digit number.")
+        elif "INVALID_COUNTRY_CODE" in error_msg:
+            raise ValidationError(f"Invalid country code in '{phone_number}'. For India, use +91 or just the 10-digit number.")
+        else:
+            raise ValidationError(f"Invalid phone number format: '{phone_number}'. Please enter a valid 10-digit number.")
     
-    Example: '+919876543210' -> '+91 98765 43210'
-    """
-    try:
-        parsed = phonenumbers.parse(phone_number, None)
-        return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-    except:
-        return phone_number
-
-
-def get_phone_variants(phone_number: str) -> list:
-    """
-    Get all variants of a phone number for searching
-    
-    Example: '+919876543210' -> ['+919876543210', '919876543210', '9876543210']
-    """
-    variants = [phone_number]
-    
-    if phone_number.startswith('+'):
-        variants.append(phone_number[1:])
-    
-    try:
-        parsed = phonenumbers.parse(phone_number, None)
-        national = str(parsed.national_number)
-        if national not in variants:
-            variants.append(national)
-    except:
-        pass
-    
-    return variants
-
-
-def calculate_name_similarity(name1: str, name2: str) -> int:
-    """
-    Calculate similarity between two names (0-100)
-    Uses fuzzy matching for better results
-    
-    Args:
-        name1: First name
-        name2: Second name
-    
-    Returns:
-        Similarity score (0-100)
-    """
-    if not name1 or not name2:
-        return 0
-    
-    # Convert to lowercase for comparison
-    name1 = name1.lower().strip()
-    name2 = name2.lower().strip()
-    
-    # Exact match
-    if name1 == name2:
-        return 100
-    
-    # Use fuzzywuzzy for partial matching
-    return fuzz.ratio(name1, name2)
+    except Exception as e:
+        raise ValidationError(f"Phone number error: {str(e)}")

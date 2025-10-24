@@ -15,7 +15,7 @@ class CreateUserInputSerializer(serializers.Serializer):
         try:
             normalized = normalize_phone_number(value)
         except Exception as e:
-            raise serializers.ValidationError(f"Invalid phone number format: {str(e)}")
+            raise serializers.ValidationError(str(e))
         
         # Check if phone already exists
         if User.objects.filter(phone_number=normalized).exists():
@@ -46,7 +46,7 @@ class CreateUserInputSerializer(serializers.Serializer):
 class LoginUserInputSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=20)
     password = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(max_length=100, required=False)
+    first_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     last_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
 
@@ -56,4 +56,4 @@ class LoginUserInputSerializer(serializers.Serializer):
         try:
             return normalize_phone_number(value)
         except Exception as e:
-            raise serializers.ValidationError(f"Invalid phone number format: {str(e)}")
+            raise serializers.ValidationError(str(e))

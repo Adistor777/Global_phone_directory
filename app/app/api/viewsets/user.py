@@ -21,17 +21,28 @@ class UserSignupView(APIView):
         serializer = CreateUserInputSerializer(data=request.data)
         
         if serializer.is_valid():
-            print("Validation passed, creating user...")
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
+            print("✅ Validation passed, creating user...")
+            try:
+                user = serializer.save()
+                refresh = RefreshToken.for_user(user)
+                
+                response_data = {
+                    'user': UserOutputSerializer(user).data,
+                    'access_token': str(refresh.access_token),
+                    'refresh_token': str(refresh),
+                }
+                
+                print("✅ SUCCESS! User created:", user.phone_number)
+                return Response(response_data, status=status.HTTP_201_CREATED)
             
-            return Response({
-                'user': UserOutputSerializer(user).data,
-                'access_token': str(refresh.access_token),
-                'refresh_token': str(refresh),
-            }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                print("❌ Error creating user:", str(e))
+                return Response(
+                    {'error': f'Failed to create user: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         
-        print("Validation FAILED")
+        print("❌ Validation FAILED")
         print("Errors:", serializer.errors)
         print("=" * 50)
         
@@ -43,6 +54,11 @@ class UserLoginView(APIView):
     permission_classes = []      # Disable permissions
     
     def post(self, request):
+        print("=" * 50)
+        print("Login Request Received")
+        print("Data:", {**request.data, 'password': '***'})  # Hide password in logs
+        print("=" * 50)
+        
         serializer = LoginUserInputSerializer(data=request.data)
         
         if serializer.is_valid():
@@ -53,7 +69,8 @@ class UserLoginView(APIView):
             user = authenticate(request, username=phone_number, password=password)
             
             if user:
-                # User exists and password is correct
+                # ✅ Existing user with correct password
+                print("✅ User authenticated successfully:", phone_number)
                 refresh = RefreshToken.for_user(user)
                 
                 return Response({
@@ -62,38 +79,55 @@ class UserLoginView(APIView):
                     'refresh_token': str(refresh),
                 }, status=status.HTTP_200_OK)
             
-            # Check if user exists but password is wrong
+            # Check if user exists (for better error message)
             if User.objects.filter(phone_number=phone_number).exists():
+                # ✅ User exists but wrong password
+                print("❌ Invalid password for:", phone_number)
                 return Response({
-                    'error': 'Invalid credentials'
+                    'error': 'Invalid credentials. Please check your password.'
                 }, status=status.HTTP_401_UNAUTHORIZED)
             
-            # User doesn't exist - auto-create with additional fields
+            # ✅ User doesn't exist - auto-create IF first_name provided
             first_name = serializer.validated_data.get('first_name')
+            
+            if not first_name:
+                # User doesn't exist and no first_name = can't auto-create
+                print("❌ User not found and no first_name for auto-create:", phone_number)
+                return Response({
+                    'error': 'Account not found. Please sign up first or provide your name to create an account.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Auto-create new user
+            print("✅ Auto-creating new user:", phone_number)
             last_name = serializer.validated_data.get('last_name', '')
             email = serializer.validated_data.get('email')
             
-            if not first_name:
+            try:
+                user = User.objects.create_user(
+                    phone_number=phone_number,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email
+                )
+                
+                refresh = RefreshToken.for_user(user)
+                print("✅ New user created successfully:", phone_number)
+                
                 return Response({
-                    'error': 'First name required for new account creation'
-                }, status=status.HTTP_400_BAD_REQUEST)
+                    'user': UserOutputSerializer(user).data,
+                    'access_token': str(refresh.access_token),
+                    'refresh_token': str(refresh),
+                }, status=status.HTTP_201_CREATED)
             
-            # Create new user
-            user = User.objects.create_user(
-                phone_number=phone_number,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                email=email
-            )
-            
-            # Generate tokens
-            refresh = RefreshToken.for_user(user)
-            
-            return Response({
-                'user': UserOutputSerializer(user).data,
-                'access_token': str(refresh.access_token),
-                'refresh_token': str(refresh),
-            }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                print("❌ Error auto-creating user:", str(e))
+                return Response({
+                    'error': f'Failed to create account: {str(e)}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        print("❌ Validation FAILED")
+        print("Errors:", serializer.errors)
+        print("=" * 50)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
