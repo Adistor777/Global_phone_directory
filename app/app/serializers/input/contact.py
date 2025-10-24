@@ -1,14 +1,30 @@
 from rest_framework import serializers
+from app.models import Contact
+from app.utils import normalize_phone_number
 
 
 class CreateContactInputSerializer(serializers.Serializer):
-    first_name = serializers.CharField(required=True, max_length=50)
-    last_name = serializers.CharField(required=False, allow_blank=True, max_length=50, default='')
-    phone_number = serializers.CharField(required=True, max_length=20, min_length=10)
-    
+    phone_number = serializers.CharField(max_length=20)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
     def validate_phone_number(self, value):
-        from app.utils import normalize_phone_number
+        """Normalize and validate phone number"""
         try:
-            return normalize_phone_number(value)
-        except ValueError as e:
+            normalized = normalize_phone_number(value)
+            
+            # Check if contact already exists for this user
+            user = self.context.get('request').user if self.context.get('request') else None
+            if user and Contact.objects.filter(phone_number=normalized, created_by=user).exists():
+                raise serializers.ValidationError("You already have a contact with this phone number")
+            
+            return normalized
+        except Exception as e:
             raise serializers.ValidationError(str(e))
+
+    def create(self, validated_data):
+        """
+        Create the contact instance
+        THIS METHOD WAS MISSING - CRITICAL FIX
+        """
+        return Contact.objects.create(**validated_data)
